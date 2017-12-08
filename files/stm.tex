@@ -28,6 +28,49 @@
   \subsection{Design and Working Principle}
 
   \par
+  The design of the STM provided in \cite{Shavit1997} and \cite{weimerskirch2008software} vary but their core structure is similar. Although my STM prototypes draw their core structure from these papers, they deviate quite a bit from the original structure --- more about my designs in the later sections. I took the decision to deviate from the original structure to achieve the APIs I wanted to design in {\em Java} and {\em Go}. Nevertheless, my design and the original design converge because they both follow the same execution workflow. \par
+
+  \subsubsection{Design mentioned in the literature}
+
+  \par
+  As per the designs mentioned in \cite{Shavit1997} and \cite{weimerskirch2008software}, the STM has the following data structures:
+
+  \begin{itemize}
+    \item {\em Memory} [M], a vector which contains the data stored in the STM,
+
+    \item {\em Ownerships} [O], a vector which determines which {\em transaction} owns the particular memory cell in the {\em Memory} vector.
+  \end{itemize}
+
+  \par
+  Each process ``i'' keeps a {\em record} pointed to by a {\em Rec\textsubscript{i}} pointer and this record is used to store information about the current transaction it initiated \cite{Shavit1997}\cite{weimerskirch2008software}. The {\em records} have the following fields \cite{Shavit1997}\cite{weimerskirch2008software}: \par
+
+  \begin{itemize}
+    \item {\em Size}, is the size of the data set,
+
+    \item {\em Add[]}, a vector that contains the data set addresses in the increasing order,
+
+    \item {\em OldValues[]}, a vector of data set's size whose cells are initialized to {\em Null} at the beginning of every transaction. In case of successful transactions, this vector will contain the former values stored in the involved locations,
+
+    \item {\em Version}, is an integer, initially 0, which determines the instance number of the transaction. This field is incremented every time the process terminates a transaction.
+  \end{itemize}
+
+  \subsubsection{My deviations}
   
+  \par
+  I have introduced the following deviations in my STM prototypes: \par
+  \begin{itemize}
+    \item I treat each {\em record} as the {\em metadata} of the transaction. So, the {\em Rec\textsubscript{i}} objects become my transactions and their content becomes the transaction's metadata.
+
+    \item The design in \cite{Shavit1997} and \cite{weimerskirch2008software} both used the {\em Add[]} vector to store the addresses of the memory cells the transaction intentds to access --- both for read and write operations. However, I maintain two separate sets named ``readSet'' and ``writeSet'' to store the addresses of the memory cells that the transaction intends to read and write respectively. \par
+
+    The reason for maintaining two separate sets for read and write locations is because of the description of the transaction execution workflow in \cite{weimerskirch2008software}. There is a mention of ``write set'' and ``read set'' but, no supporting definition is provided. Since, there is no deviation between the execution workflows of \cite{Shavit1997} and \cite{weimerskirch2008software}, I went ahead with the two set approach. This seems more natural and declarative than the use of {\em Add[]} vector in \cite{Shavit1997}. Another reason for going with design is that the design in \cite{Shavit1997} and \cite{weimerskirch2008software} are very low level designs --- ones that need to be implemented in C/C++. Because, my choice of languages are relatively higher level than C/C++, my implementation designs have changed accordingly. \par
+
+    \item The {\em OldValues} is a {\em hash-map} instead of a {\em vector} in my prototypes.
+
+    \item The {\em Ownerships} is a {\em hash-map} instead of a {\em vector} in my prototypes. The mapping is from the memory cell address to the owner transaction.
+  \end{itemize}
+
+  \par
+  There are other deviations but, these deviations are influenced by the languages used for implementation. These deviations in the design are discussed in the later sections. \par
 
 \end{document}
