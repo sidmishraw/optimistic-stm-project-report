@@ -1,0 +1,33 @@
+%
+% stm.tex
+% @author Sidharth Mishra
+% @description Generic information about STM
+% @copyright 2017 Sidharth Mishra
+% @created Thu Dec 07 2017 19:08:49 GMT-0800 (PST)
+% @last-modified Thu Dec 07 2017 19:08:49 GMT-0800 (PST)
+%
+
+\documentclass[../main]{subfiles}
+  
+\begin{document}
+
+  \section{Software Transactional Memory}
+
+  \subsection{Definition}
+
+  \par
+  Software Transactional Memory (STM) is a new approach that accesses memory objects in a way similar to database transactions \cite{weimerskirch2008software}. STM is a variant of the {\em Transactional Memory} by Herlihy M and Moss JEB and is designed by Nir Shavit and Dan Touitou \cite{weimerskirch2008software}\cite{Shavit1997}. \par
+
+  The STM is a {\em shared object} that behaves like a {\em memory} that supports {\em multiple changes} to its addresses by means of {\em transactions} \cite{Shavit1997}. And, a {\em transaction} is a thread of control that applies a finite sequence of {\em primitive operations} to memory --- primitive operations are {\em read} and {\em write}. Therefore, a transaction is a series of read and write operations that appear as one single atomic operation to other threads/transactions \cite{weimerskirch2008software}. \par
+
+  The operations of the transaction are atomic meaning, either all the actions of a transaction succeed or all of them fail --- there is no partial completion. Even though the transactions of the STM seem similar to the transactions in the database management system (DBMS) context, they are fundamentally different. While database transactions are {\bf ACID} compliant, STM transactions are {\bf ACI*} compliant --- the STM transactions are not {\em durable} because they are dealing with primary memory (RAM) \cite{weimerskirch2008software}. \par
+
+  I use the term ``{\em Optimistic STM}'' to refer to an STM that is {\em wait-free} and {\em non-blocking}.
+  An STM implementation is {\em wait-free} if any process that {\em repeatedly} attempts to execute a given transaction terminates successfully after a {\em finite} number of {\em machine steps} \cite{Shavit1997}. And, the STM implementation is {\em non-blocking} if the repeated attempts to execute some transaction by a process implies that some other process with some other transaction will terminate successfully after a finite number of {\em machine steps} in the whole system \cite{Shavit1997}. A process is any thread that invokes the execution of a transaction (or the thread that executes its actions atomically). The {\em main} thread could be envisioned as the most common {\em process}. \par
+
+  \subsection{Design and Working Principle}
+
+  \par
+  
+
+\end{document}

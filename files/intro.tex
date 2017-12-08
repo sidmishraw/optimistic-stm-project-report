@@ -1,0 +1,18 @@
+%
+% intro.tex
+% @author Sidharth Mishra
+% @description The introduction
+% @copyright 2017 Sidharth Mishra
+% @created Thu Dec 07 2017 19:08:45 GMT-0800 (PST)
+% @last-modified Thu Dec 07 2017 19:08:45 GMT-0800 (PST)
+%
+
+\documentclass[../main]{subfiles}
+
+\begin{document}
+
+  \section{Introduction}
+  \par
+  Concurrency primitives built into languages such as {\em Java} are powerful but, have complex syntax and require careful use. For example, {\em Java} provides the {\em synchronized} blocks and methods for granular locks but, these require careful handling because they might lead to degraded performance due to excessive locking or data-race conditions if not applied at correct spots. Moreover, modern languages such as {\em Go} supply simpler concurrency directives such as {\em goroutines} and {\em channels} but, these too, at times, require locking and can be difficult to reason about. One possible solution is to use {\em Software Transactional Memory} (STM) to handle concurrency. The STM relieves the developer from thinking about or writing parallel code by letting them write serial code and the STM manager handling the system-specific details to run their code in parallel. \par
+
+\end{document}

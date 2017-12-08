@@ -1,0 +1,36 @@
+{
+  "cSpell.words": [
+    "Jos\\'e",
+    "addcontentsline",
+    "conc",
+    "etran",
+    "goroutines",
+    "h",
+    "herlihy",
+    "iee",
+    "jos",
+    "jos\\'e",
+    "moss",
+    "raggedleft",
+    "shavit",
+    "software",
+    "touitou",
+    "weimerskirch"
+  ],
+  "latex-workshop.latex.outputDir":
+    "/Users/sidmishraw/Dropbox/coursework/CS_252/project/report/pdfs/",
+  "latex-workshop.latex.clean.enabled": true,
+  "latex-workshop.latex.toolchain": [
+    {
+      "command": "latexmk",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-pdf",
+        "-outdir=/Users/sidmishraw/Dropbox/coursework/CS_252/project/report/pdfs",
+        "%DOC%"
+      ]
+    }
+  ]
+}

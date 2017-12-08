@@ -1,0 +1,85 @@
+%
+% main.tex
+% @author Sidharth Mishra
+% @description CS 252 Project report - An optimistic STM prototype
+% @copyright 2017 Sidharth Mishra
+% @created Thu Dec 07 2017 19:05:35 GMT-0800 (PST)
+% @last-modified Thu Dec 07 2017 19:05:35 GMT-0800 (PST)
+%
+
+\documentclass[12pt,letterpaper,oneside,titlepage]{report}
+
+%# TOP MATTER
+%# For UTF-8 support
+% \usepackage[utf-8]{inputenc}
+%# For UTF-8 support
+%# For modularlizing my report
+\usepackage{subfiles}
+%# For modularlizing my report
+%# For fancy headers and footers
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\lhead{\footnotesize AN OPTIMISTIC STM PROTOTYPE}
+\chead{}
+\rhead{\thepage}
+\lfoot{}
+\cfoot{}
+\rfoot{}
+%# For fancy headers and footers
+%# For customizing fonts in titles and section headers
+\usepackage{titlesec}
+\renewcommand{\thesection}{\Roman{section}}
+\titleformat*{\section}{\normalsize\bfseries\center}
+\titleformat*{\subsection}{\small\bfseries}
+%# For customizing fonts in titles and section headers
+%# For renaming Bibliography to References
+\renewcommand{\bibname}{References}
+%# For renaming Bibliography to References
+%# For adding URL links to Bibentries
+\usepackage{bibentry}
+\usepackage{hyperref}
+%# For adding URL links to Bibentries
+%# TOP MATTER
+
+\begin{document}
+
+  %# Title page
+  \subfile{files/title}
+  %# Title page
+
+  %# TOC
+  \cleardoublepage
+  \pagenumbering{gobble} % Eat up the page numbering prior to TOC
+  \tableofcontents % Add the TOC
+  \pagebreak % add a page break so that next content is added from a new page
+  \cleardoublepage % clear the double page formatting
+  \vfill % vfill to fill the rest of the page
+  %# TOC
+
+  \pagenumbering{arabic}
+  \subfile{files/intro}
+  \subfile{files/stm}
+
+  %# Requirements section
+  \section{Requirements}
+  To implement the project, the following resources were used: \par
+
+  \begin{itemize}
+    \item Java (JDK) {\em version: 1.8.0\_144+}
+    \item Go {\em version: 1.8.0+}
+  \end{itemize}
+
+  {\raggedleft These were easily available, free, and open-source.}
+  %# Requirements section
+
+  \subfile{files/stm-java}
+  \subfile{files/stm-go}
+  \subfile{files/caveats} 
+
+  %# Bibliography using BibTex and IEEE format
+  \addcontentsline{toc}{section}{References} % Adds the references to TOC
+  \bibliographystyle{IEEEtran}
+  \bibliography{references}{}
+  %# Bibliography using BibTex and IEEE format
+
+\end{document}
