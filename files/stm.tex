@@ -65,7 +65,7 @@
 
     The reason for maintaining two separate sets for read and write locations is because of the description of the transaction execution workflow in \cite{weimerskirch2008software}. There is a mention of ``write set'' and ``read set'' but, no supporting definition is provided. Since, there is no deviation between the execution workflows of \cite{Shavit1997} and \cite{weimerskirch2008software}, I went ahead with the two set approach. This seems more natural and declarative than the use of {\em Add[]} vector in \cite{Shavit1997}. Another reason for going with design is that the design in \cite{Shavit1997} and \cite{weimerskirch2008software} are very low level designs --- ones that need to be implemented in C/C++. Because, my choice of languages are relatively higher level than C/C++, my implementation designs have changed accordingly. \par
 
-    \item The {\em OldValues} is a {\em hash-map} instead of a {\em vector} in my prototypes.
+    \item The {\em OldValues} is a {\em hash-map} instead of a {\em vector} in my prototypes. The mapping is from the memory cell address to the data contained in it.
 
     \item The {\em Ownerships} is a {\em hash-map} instead of a {\em vector} in my prototypes. The mapping is from the memory cell address to the owner transaction.
   \end{itemize}
