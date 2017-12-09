@@ -40,6 +40,23 @@
 \usepackage{bibentry}
 \usepackage{hyperref}
 %# For adding URL links to Bibentries
+%# For adding support for embedding images in the document
+\usepackage{graphicx}
+\graphicspath{{uml/}} % the directory where the images are located at
+%# For adding support for embedding images in the document
+%# Macro for code
+\newcommand{\code}[1]{\texttt{#1}}
+%# Macro for code
+%# For making verbatim environment flexible
+\usepackage{listings}
+\lstset{
+  basicstyle=\small\ttfamily,
+  columns=flexible,
+  breaklines=true
+}
+% Using `lstlisting' instead of `verbatim' for making code
+% visible properly.
+%# For making verbatim environment flexible
 %# TOP MATTER
 
 \begin{document}

@@ -23,7 +23,7 @@
   The operations of the transaction are atomic meaning, either all the actions of a transaction succeed or all of them fail --- there is no partial completion. Even though the transactions of the STM seem similar to the transactions in the database management system (DBMS) context, they are fundamentally different. While database transactions are {\bf ACID} compliant, STM transactions are {\bf ACI*} compliant --- the STM transactions are not {\em durable} because they are dealing with primary memory (RAM) \cite{weimerskirch2008software}. \par
 
   I use the term ``{\em Optimistic STM}'' to refer to an STM that is {\em wait-free} and {\em non-blocking}.
-  An STM implementation is {\em wait-free} if any process that {\em repeatedly} attempts to execute a given transaction terminates successfully after a {\em finite} number of {\em machine steps} \cite{Shavit1997}. And, the STM implementation is {\em non-blocking} if the repeated attempts to execute some transaction by a process implies that some other process with some other transaction will terminate successfully after a finite number of {\em machine steps} in the whole system \cite{Shavit1997}. A process is any thread that invokes the execution of a transaction (or the thread that executes its actions atomically). The {\em main} thread could be envisioned as the most common {\em process}. \par
+  An STM implementation is {\em wait-free} if any process that {\em repeatedly} attempts to execute a given transaction terminates successfully after a {\em finite} number of {\em machine steps} \cite{Shavit1997}. And, the STM implementation is {\em non-blocking} if the repeated attempts to execute some transaction by a process implies that some other process with some other transaction will terminate successfully after a finite number of {\em machine steps} in the whole system \cite{Shavit1997}. A process is any thread that invokes the execution of a transaction (or the thread that executes its actions atomically). The {\em main} thread could be envisioned as the most common {\em processes}. \par
 
   \subsection{Design and Working Principle}
 
@@ -36,6 +36,7 @@
   As per the designs mentioned in \cite{Shavit1997} and \cite{weimerskirch2008software}, the STM has the following data structures:
 
   \begin{itemize}
+
     \item {\em Memory} [M], a vector which contains the data stored in the STM,
 
     \item {\em Ownerships} [O], a vector which determines which {\em transaction} owns the particular memory cell in the {\em Memory} vector.
@@ -52,13 +53,16 @@
     \item {\em OldValues[]}, a vector of data set's size whose cells are initialized to {\em Null} at the beginning of every transaction. In case of successful transactions, this vector will contain the former values stored in the involved locations,
 
     \item {\em Version}, is an integer, initially 0, which determines the instance number of the transaction. This field is incremented every time the process terminates a transaction.
+
   \end{itemize}
 
   \subsubsection{My deviations}
   
   \par
   I have introduced the following deviations in my STM prototypes: \par
+
   \begin{itemize}
+
     \item I treat each {\em record} as the {\em metadata} of the transaction. So, the {\em Rec\textsubscript{i}} objects become my transactions and their content becomes the transaction's metadata.
 
     \item The design in \cite{Shavit1997} and \cite{weimerskirch2008software} both used the {\em Add[]} vector to store the addresses of the memory cells the transaction intentds to access --- both for read and write operations. However, I maintain two separate sets named ``readSet'' and ``writeSet'' to store the addresses of the memory cells that the transaction intends to read and write respectively. \par
@@ -68,9 +72,36 @@
     \item The {\em OldValues} is a {\em hash-map} instead of a {\em vector} in my prototypes. The mapping is from the memory cell address to the data contained in it.
 
     \item The {\em Ownerships} is a {\em hash-map} instead of a {\em vector} in my prototypes. The mapping is from the memory cell address to the owner transaction.
+
+    \item \cite{Shavit1997} mentions a ``helping approach'' but, I do not have this in my prototypes.
+
   \end{itemize}
 
   \par
-  There are other deviations but, these deviations are influenced by the languages used for implementation. These deviations in the design are discussed in the later sections. \par
+  There are other deviations but, they are influenced by the languages used for implementation. The language specific deviations in the design are discussed in the later sections. \par
+
+  \subsubsection{Execution workflow}
+  \label{sec:exec-workflow}
+
+  \par
+  Following are the steps in the execution workflow as per \cite{weimerskirch2008software}\cite{Shavit1997}:
+
+  \par
+  \begin{enumerate}
+
+    \item ``{\em Take Ownership}'': Each time a transaction ``i'' is initiated, it verifies that none of its write set members are owned by another transaction. If another transaction owns the write set member, the {\em Take Ownership} phase fails and the transaction will retry from the beginning after releasing any ownerships it acquired. Otherwise, the {\em Ownerships} is populated with a mapping from the memory cell to the {\em Rec\textsubscript{i}}/transaction that owns it --- ownership is acquired.\par
+
+    \item ``{\em Take Backup}'': The backup of the data in the memory cells is stored into the {\em OldValues} vector in the {\em Rec\textsubscript{i}}. This will be used to restore the data into the memory cells in case of a {\em rollback}.\par
+
+    \item ``{\em Execute Actions}'': The transaction begins executing the actions without referring to any other transactions. Since, it is the sole owner of the memory cells it is planning to write into, it executes in isolation --- the {\em ``I''} from {\em ``ACI*''}. If any action in the list of actions fails, the transaction rolls back --- restores the data from {\em OldValues} and releases ownerships before restarting from the beginning. Otherwise, it proceeds to the ``Commit'' phase. \par
+
+    \item ``{\em Commit}'': During the {\em Commit} phase, the transaction has to verify that its read set members have not been modified by another transaction. If the read set members have been modified by some other transaction, the transaction aborts and rolls back --- restores the backup, releases the ownerships, and starts execution from the beginning. Otherwise, the transaction commits successfully, {\em Version} of the transaction is incremented, and it releases all write set members from its ownership.
+
+  \end{enumerate}
+
+  \par 
+  A successful ``{\em Commit}'' phase signals the termination of a transaction. It also makes the effects of the transaction visible to all other transactions --- the transaction comes out of {\em isolation}. \par
+
+  The subsequent sections discuss the language specific design decisions for building the STM prototypes.
 
 \end{document}
