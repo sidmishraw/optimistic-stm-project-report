@@ -11,6 +11,51 @@
   
 \begin{document}
 
-  \section{Caveats}
+  \section{Benefits and Caveats}
+
+  \par
+  The STM prototypes have the following benefits and caveats:
+
+  \subsubsection{Benefits}
+  \begin{itemize}
+    
+    \item The STM provides the developers with a higher level of abstraction for writing concurrent code.
+
+    \item It also provides composable concurrency. The developer can create atomic pieces of code that are guaranteed to run concurrently and produce consistent results all the time.
+
+    \item Since, the STM framework takes care of executing the {\em transactions} concurrently, and the transactions themselves have their logic defined serially, it frees the developers from thinking about parallel code \cite{weimerskirch2008software}.
+
+  \end{itemize}
+
+  \subsubsection{Caveats}
+  \begin{itemize}
+
+    \item Not all actions/operations are {\em transaction} friendly. Certain actions like the \code{IO} cannot be rolled back or reverted. Also, in case of the STM prototype in Go, because of the introduction of the {\em Scanning phase}, actions are executed twice and introducing mutation in variables external to the STM might result in erroneous code.
+
+    \item The prototypes are implemented in languages that offer no way to separate \code{IO} actions like {\em Haskell}. Because of this reason, it comes down to developer discipline to prevent mixups. Furthermore, the lack of macros makes the code verbose. Having macros in Go or Java could make the code more elegant.
+
+    \item Although, the prototypes have no concept of deadlock --- they are optimistic, there is a chance to run into a deadlock like situation if the transactions happen to have an always failing action or operation. This will make the transactions keep retrying forever and if the main thread/process happens to wait for the transactions to complete, the program will keep running forever (hang). But, the OS/runtime will never notice this as a {\em deadlock}.
+
+  \end{itemize}
+
+  \section{GitHub repositories}
+
+  \par
+  The source code of the STM prototypes and this report can be found online in the following GitHub repositories: \par
+
+  \begin{description}
+
+    \item[foop-1] The GitHub repository for the STM prototype in {\em Java}. \\
+    URL: \url{https://github.com/sidmishraw/foop-1/tree/bank}
+
+    \item[stm-reworked-go] The GitHub repository for the STM prototype in {\em Go}. \\
+    URL: \url{https://github.com/sidmishraw/stm-reworked-go}
+
+    \item[optimistic-stm-project-report] The GitHub repository for {\LaTeX} source this report. \\
+    URL: \url{https://github.com/sidmishraw/optimistic-stm-project-report}
+
+  \end{description}
+
+  \pagebreak % adding page break to make following pages start from next page
 
 \end{document}

@@ -14,6 +14,159 @@
   \section{STM in Go}
 
   \par
-  This section discusses the implementation of the STM prototype in {\em Go}. I made some changes to the design of the STM and the execution workflow (from \ref{exec-workflow}). The changes were made to get {\em Haskell}'s {\em Monad} styled builder pattern for my {\em transactions} and an easy to use API.
+  This section discusses the implementation of the STM prototype in {\em Go}. I made some changes to the design of the STM and the execution workflow (from Section \ref{sec:exec-workflow}). The changes were made to get {\em Haskell}'s {\em Monad} styled builder pattern for my {\em transactions} and an easy-to-use API. \par
+
+  The STM in this prototype is located in the \code{stm} package. It is a {\em struct} with three fields:
+  
+  \begin{description}
+    
+    \item[\code{stmMutex}] The {\em mutex} that is used to synchronize reads and writes into the \code{\_Memory} and \code{\_Ownerships} objects of the \code{STM}.
+
+    \item[\code{\_Memory}] The vector of memory cells, it is a {\em slice} of pointers to \code{MemoryCell} objects.
+
+    \item[\code{\_Ownerships}] The {\em hash-map} of memory cell indices to their owning {\em transactions}.
+
+  \end{description}
+
+  \par
+  The \code{NewSTM} function is used to create a new STM. It initializes the new STM and returns a pointer to the that object. The \code{STM} object exposes methods for creating memory cells (\code{MakeMemCell}), creating/building transactions, logging, and executing the transactions --- both synchronously (\code{Exec}) and asynchronously (\code{ForkAndExec}). \par
+
+  The transaction is represented as an instance of the \code{Transaction} struct. The metadata of the transaction is held in its \code{metadata} field which is an object of the \code{Record} struct. The metadata includes the \code{readSet}, \code{writeSet}, and \code{oldValues}. The \code{readSet} is a slice of pointers to \code{MemoryCell} objects that the transaction intends to read data from. The \code{writeSet} is a slice of pointers to \code{MemoryCell} objects that the transaction intends to write into. And, the \code{oldValues} is a {\em hash-map} from the pointer to \code{MemoryCell}s to the data (\code{Data}) contained inside it. \par
+
+  The \code{oldValues} is used to store data for two reasons: \par
+
+  \begin{enumerate}
+
+    \item While reading, the transaction stores the data read into the \code{oldValues} so that it can verify the validity of the data incase some other transaction has modified it --- this is because the transaction does not take ownership of the memory cells in its \code{readSet}. If the data has been modified by some other transaction, it signifies that the transaction has read in some stale data and it needs to {\em abort}.
+
+    \item While writing, the transaction does not update the contents of the \code{MemoryCell} directly. Instead, the transaction writes the new data into the \code{oldValues} {\em hash-map}. When the transaction has verified the integrity of the operations in its {\em commit phase}, it flushes the data into the \code{MemoryCell}. Otherwise, the data remains local to the transaction and never gets flushed into the \code{MemoryCell} --- other transactions never get to see the data, conforms to the {\em isolation} specification.
+
+  \end{enumerate}
+
+  \par
+  A transaction is built by using the \code{NewT} method of the \code{STM}. This method creates and returns a transaction context --- inspired by the Haskell API mentioned in \cite{jones2007beautiful}. The \code{TransactionContext} struct represents the {\em transaction context}. It has a slice of functions (\code{func() bool}) named \code{actions} and a pointer to the \code{Transaction} object it is building. The \code{actions} hold the transaction's actions --- operations it will do on the memory. \par
+
+  The \code{Do} method of the \code{TransactionContext} allows to chain together the actions of the transaction. The \code{Where} method of the \code{TransactionContext} allows the consumer to define transaction specific parameters that can be accessed inside the operations/actions. The operations need to have the following signature:
+  
+  \begin{lstlisting}
+    func(t *Transaction) bool
+  \end{lstlisting}
+
+  \par
+  The \code{ReadT} and \code{WriteT} methods of the \code{Transaction} object allow for reading and writing operations on the \code{MemoryCell}s. \par
+
+  The execution workflow of the transaction in this prototype deviates from the workflow in Section \ref{sec:exec-workflow}. In order to make my API for building transactions easy-to-use, I made the specification of read set and write set members implicit. This was a step to make the transaction more dynamic. Initially, I had thought of merging the addition of read set and write set members into the \code{ReadT} and \code{WriteT} methods respectively but, it failed miserably. So, I came up with an idea: added a {\em Scanning} phase before the {\em Take Ownership} phase. \par
+
+  In the {\em Scanning} phase, the {\em transaction} executes the \code{actions} (kind of a dry-run) without caring for their result status. In the {\em Scanning} phase, all the read set and write set members are added so that the transaction can take ownership of the write set members in the {\em Take Ownership} phase. Subsequently, the actual execution happens in the {\em Execute Actions} phase and the status of the operations {\em does matter} in this phase. \par
+
+  Since, the transaction executes the \code{actions} twice, it is recommended that the data used be only from the STM and not external --- the data that is not stored in the STM might introduce bugs. \par
+
+  To achieve this {\em Scanning} phase, I introduced a flag called \code{IsScanning} in the \code{Transaction} object. This flag also allows the consumer to hide information or guard logic they don't want to execute in the {\em Scanning} phase. An example usage might be:
+
+  \begin{lstlisting}
+    func(t *Transaction) bool {
+      // do stuff in scanning phase also
+      if !t.IsScanning {
+        // do stuff only when not t is not scanning
+      }
+      // do stuff in scanning phase also
+    }
+  \end{lstlisting}
+
+  \begin{verse}
+    {\bf Note}: It is advised that all \code{ReadT} and \code{WriteT} operations should be located outside the \code{if !t.IsScanning \{ \} } block so that they are visible to the transaction when it is scanning. Otherwise, it may be unable to take ownership of the \code{MemoryCell}s resulting in bugs.
+  \end{verse}
+
+  \par
+  The \code{Data} is an interface and is the type of the data stored inside the \code{MemoryCell}. The interface mandates that the data provide a \code{Clone} method. The \code{Clone} method should return a deep copy of the object so that the transaction's operations do not accidentally modified the contents of the \code{MemoryCell} in-place. \par
+
+  Following are a code excerpts from the \code{main.go} file that has an example to verify the working of the STM prototype:
+
+  \begin{lstlisting}
+    // MySTM :: The STM
+    var MySTM = stm.NewSTM()
+
+    ...
+
+    // MySlice is the wrapper type for my data to 
+    // be used in the STM.
+    type MySlice struct {
+      Slice []int
+    }
+    
+    // Clone returns a copy of the MySlice object. 
+    // This is used for implementing STM's Data inteface.
+    func (ms *MySlice) Clone() Data {
+      scopy := make([]int, len(ms.Slice))
+      copy(scopy, ms.Slice)
+      myslice := new(MySlice)
+      myslice.Slice = scopy
+      return Data(myslice)
+    }
+    
+    ...
+
+    // the data, now MySlice conforms with the stm.Data interface
+    data1 := new(MySlice)
+    data1.Slice = []int{1, 2, 3, 4, 5}
+
+    ...
+
+    // Making a new stm.MemoryCell in the STM
+    // with data inside it as its contents.
+    // cell1 is the pointer to that stm.MemoryCell
+    cell1 := MySTM.MakeMemCell(data)
+
+    ...
+
+    //# t1 definition
+    t1 := MySTM.NewT().
+      Do(func(t *Transaction) bool {
+        // read data from memory 
+        // cell - reads are transactional operations
+        dinCell1 := t.ReadT(cell1).(*MySlice)
+        log.Println("dinCell1 = ", dinCell1)
+        dinCell1.Slice[2] = dinCell1.Slice[2] - 2
+        // write the data into the MemoryCell and
+        // return the status of the operation as the
+        // status of the action.
+        return t.WriteT(cell1, dinCell1)
+      }).
+      Done("T1")
+    //# t1 definition
+
+    ...
+
+    // Execute transactions t1 and t2 concurrently
+    // while making the main thread wait for their completion.
+    // The main thread is synchronously executing with 
+    // a group of transactions.
+    MySTM.Exec(t1, t2)
+
+    ...
+
+
+  \end{lstlisting}
+
+  \par
+  This prototype has been verified using the following example:
+  
+  \begin{quote}
+    The STM has 1 memory cell. This memory cell holds a slice \code{[]int\{1,2,3,4,5\}}. There are 2 transactions T1 and T2. \par
+
+    \begin{itemize}
+
+      \item T1 will subtract 2 from the 3rd element of the slice.
+
+      \item T2 will add 3 to the 3rd element of the slice.
+
+    \end{itemize}
+
+    \par
+    The transactions T1 and T2 are executed concurrently. By virtue of {\em ACI*} compliance, the consistent state of the slice \code{[]int\{1,2,3,4,5\}} after T1 and T2 have operated on it is \code{[]int\{1,2,4,4,5\}}. Effectively, the 3rd element's value should increase by 1. The order the transactions operated doesn't matter. The simulation verifies the consistency by running the transactions T1 and T2 concurrently for 1080 times. Furthermore, the entire simulation is run a 1000 times. The logs of the operations can be found in the root.log file.
+  \end{quote}
+
+  \par
+  Although, the prototype is inspired by the {\em Monadic} style from {\em Haskell}, it still lacks the elegance of {\em Haskell}. Especially, the separation of \code{IO} and \code{STM} actions in the {\em Haskell} version shown in \cite{jones2007beautiful}.
 
 \end{document}
